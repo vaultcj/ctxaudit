@@ -55,7 +55,7 @@ That's real output from a real 23-file setup, not a mockup.
 There is no install. One file, zero dependencies, Python 3.8+.
 
 ```bash
-curl -O https://raw.githubusercontent.com/YOUR_USER/ctxaudit/main/ctxaudit.py
+curl -O https://raw.githubusercontent.com/vaultcj/ctxaudit/main/ctxaudit.py
 python3 ctxaudit.py /path/to/your/repo
 ```
 
