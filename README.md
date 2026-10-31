@@ -123,15 +123,25 @@ python3 ctxaudit.py [PATH] [options]
 
 ### In CI
 
-`--json` gives you a `score` to gate on:
+`--fail-under N` exits 1 when health drops below `N`, so context rot gets
+caught in review instead of creeping back:
 
 ```bash
-python3 ctxaudit.py . --json | python3 -c "
-import json,sys
-d = json.load(sys.stdin)
-print('context health:', d['score'], d['grade'])
-sys.exit(1 if d['score'] < 70 else 0)"
+python3 ctxaudit.py . --fail-under 70
 ```
+
+A ready-made GitHub Action is in [`.github/workflows/ctxaudit.yml`](.github/workflows/ctxaudit.yml).
+It runs on any PR touching a `CLAUDE.md`, fails below the threshold, and
+uploads the JSON report as an artifact.
+
+A pre-commit hook is in [`hooks/pre-commit`](hooks/pre-commit):
+
+```bash
+cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+```
+
+It only runs when the commit actually touches a context file. Set
+`CTXAUDIT_THRESHOLD` to change the bar, or `git commit --no-verify` to bypass.
 
 ---
 

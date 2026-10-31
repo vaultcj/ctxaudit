@@ -1,0 +1,36 @@
+name: Context health
+
+# Fails the build if the CLAUDE.md tree degrades past the threshold, so
+# context bloat gets caught in review instead of slowly returning.
+
+on:
+  pull_request:
+    paths:
+      - "**/CLAUDE.md"
+      - "**/CLAUDE.local.md"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ctxaudit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Audit CLAUDE.md tree
+        run: python3 ctxaudit.py . --no-color --fail-under 70
+
+      - name: Save report
+        if: always()
+        run: python3 ctxaudit.py . --json > ctxaudit-report.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ctxaudit-report
+          path: ctxaudit-report.json

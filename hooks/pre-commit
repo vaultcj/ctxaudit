@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# ctxaudit pre-commit hook.
+#
+# Blocks a commit when the CLAUDE.md tree drops below THRESHOLD.
+#
+# Install:
+#   cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+#
+# Bypass once (when you know what you are doing):
+#   git commit --no-verify
+
+set -euo pipefail
+
+THRESHOLD="${CTXAUDIT_THRESHOLD:-70}"
+CTXAUDIT="${CTXAUDIT_PATH:-ctxaudit.py}"
+
+# Only run when context files are actually part of this commit.
+if ! git diff --cached --name-only | grep -qE '(^|/)CLAUDE(\.local)?\.md$'; then
+  exit 0
+fi
+
+if [ ! -f "$CTXAUDIT" ]; then
+  echo "ctxaudit: $CTXAUDIT not found; skipping (set CTXAUDIT_PATH)" >&2
+  exit 0
+fi
+
+echo "ctxaudit: checking context health (threshold $THRESHOLD)..."
+if ! python3 "$CTXAUDIT" . --no-color --fail-under "$THRESHOLD"; then
+  echo >&2
+  echo "Commit blocked: context health below $THRESHOLD." >&2
+  echo "Fix the items above, raise CTXAUDIT_THRESHOLD, or use --no-verify." >&2
+  exit 1
+fi

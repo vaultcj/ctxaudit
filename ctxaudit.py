@@ -22,6 +22,7 @@ Options:
     --top N             Show N worst entries per section (default 5).
     --min-dup-words N   Ignore duplicate blocks shorter than N words (default 12).
     --no-color          Disable ANSI colour.
+    --fail-under N      Exit 1 if context health score is below N (for CI).
     --today YYYY-MM-DD  Override today's date (for reproducible reports).
     -h, --help          This message.
 """
@@ -844,6 +845,7 @@ def main(argv=None):
     p.add_argument("--top", type=int, default=5)
     p.add_argument("--min-dup-words", type=int, default=12)
     p.add_argument("--no-color", action="store_true")
+    p.add_argument("--fail-under", type=int, default=None, metavar="N")
     p.add_argument("--today", default=None)
     p.add_argument("-h", "--help", action="store_true")
     p.add_argument("--version", action="store_true")
@@ -874,10 +876,18 @@ def main(argv=None):
 
     if args.json:
         sys.stdout.write(json.dumps(to_json(data), indent=2) + "\n")
-        return 0
+    else:
+        use_colour = ((not args.no_color) and sys.stdout.isatty()
+                      and os.environ.get("TERM") != "dumb")
+        sys.stdout.write(report(data, Colour(use_colour), args.top) + "\n")
 
-    use_colour = (not args.no_color) and sys.stdout.isatty() and os.environ.get("TERM") != "dumb"
-    sys.stdout.write(report(data, Colour(use_colour), args.top) + "\n")
+    # Non-zero exit lets CI gate on context health the same way it gates on
+    # tests, so a repo cannot quietly rot back to where it started.
+    if args.fail_under is not None and data["score"]["score"] < args.fail_under:
+        sys.stderr.write(
+            "ctxaudit: context health %d is below the required %d\n"
+            % (data["score"]["score"], args.fail_under))
+        return 1
     return 0
 
 

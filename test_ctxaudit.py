@@ -321,6 +321,34 @@ class TestCLI(TreeCase):
         self.write("CLAUDE.md", "# Root\n\nLast Updated: 2026-10-30\n")
         self.assertEqual(ca.main([self.root, "--no-color", "--today", "2026-10-31"]), 0)
 
+    def _messy(self):
+        for name in ("a", "b", "c"):
+            self.write("%s/CLAUDE.md" % name,
+                       "Last Updated: 2024-01-01\n" + BLOCK + "\n" + "pad\n" * 300)
+
+    def test_fail_under_exits_1_below_threshold(self):
+        self._messy()
+        self.assertEqual(
+            ca.main([self.root, "--no-color", "--today", "2026-10-31",
+                     "--fail-under", "70"]), 1)
+
+    def test_fail_under_exits_0_above_threshold(self):
+        self.write("CLAUDE.md", "# Clean\n\nLast Updated: 2026-10-30\n")
+        self.assertEqual(
+            ca.main([self.root, "--no-color", "--today", "2026-10-31",
+                     "--fail-under", "70"]), 0)
+
+    def test_no_fail_under_never_errors(self):
+        self._messy()
+        self.assertEqual(
+            ca.main([self.root, "--no-color", "--today", "2026-10-31"]), 0)
+
+    def test_fail_under_applies_in_json_mode(self):
+        self._messy()
+        self.assertEqual(
+            ca.main([self.root, "--json", "--today", "2026-10-31",
+                     "--fail-under", "70"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
