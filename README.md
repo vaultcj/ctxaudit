@@ -2,6 +2,10 @@
 
 **See what your `CLAUDE.md` files actually cost you.**
 
+![ctxaudit report](docs/demo.png)
+
+*Real output. Try it yourself on the included example: `python3 ctxaudit.py examples/demo-repo`*
+
 Claude Code loads `CLAUDE.md` from your working directory *and every parent
 directory* — every session, before you type anything. In a repo with nested
 context files, that bill is invisible. You never see the number. You just feel
